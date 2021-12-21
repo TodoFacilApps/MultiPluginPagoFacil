@@ -40,7 +40,7 @@ get_header();
 	}
 ?>
 	<center>
-	<H1><?= $mensajedepago ?></H1>
+	<H1><?= @$mensajedepago ?></H1>
 		<table style="width: 42%; margin-top: 100px;">
 			<tr align="center">
 				<th colspan="2">DATOS DE LA COMPRA</th>
