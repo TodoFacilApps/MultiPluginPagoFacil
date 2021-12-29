@@ -142,8 +142,6 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
             $lcMoneda=2;
         }
         $lcNombreCliente= @$orderdata['datos']['billing']['first_name']." ". @$orderdata['datos']['billing']['last_name'];
-        error_log("response--datosbilling" . json_encode($orderdata['datos']['billing']));
-
         ////----------------------------
         $arrayitem=$order->get_items();
         $ArrayProductos= array();
@@ -152,7 +150,6 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
         $lcCommerceIdAux="";
         $lbBandera=false;
         $lnSerial=0;
-
         foreach ($arrayitem as $key => $value) {
             $product=$arrayitem[$key]->get_product();
             $lnSerial=$lnSerial+1;
@@ -168,9 +165,7 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                                     "Total"=> $value->get_quantity() * $product->get_price() 
                                     );
             array_push($ArrayProductos , $product_detalle );
-
-            
-    }
+        }
         //--------------------------------
         /// aqui se empezara a encriptar
         // aqui todas estas variables son las que se van a encriptar para poder ingresar al checkout pagofacil 
@@ -213,9 +208,8 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
             $response = wp_remote_retrieve_body($laServicioLogin);
             error_log("response--" . json_encode($response));
             $responsetoken = json_decode($response);
-
-            // aqui se hara el tema de la genracion de la transaccion
-            error_log("response--values" . json_encode($responsetoken->values));
+        // aqui esta haciendo el login para poder ocupar los servicios
+        // aqui se hara el tema de la genracion de la transaccion
             $url = 'http://serviciopagofacil.syscoop.com.bo/api/Transaccion/CrearTransaccionDePago';
             $laDatos = array("tnCliente" => 9 ,  
                             "tcApp" => 3  ,
@@ -240,14 +234,15 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                 'method'      => 'POST',
                 'data_format' => 'body',
                 ));
+                error_log("datos--transaccion" . json_encode($laDatos));
         
             $responsetransaccion = wp_remote_retrieve_body($laServicioLogin);
-           // error_log("response--" . json_encode($response));
             $responsetransaccion = json_decode($responsetransaccion);
-       
-            
-        
-            error_log("response--values" . json_encode($responsetransaccion->values));
+            error_log("response--transaccion" . json_encode($responsetransaccion));
+
+        // aqui se ara el ttema de transaccion 
+
+        // aqui se ra el tema ya de tigo money 
             $url = 'http://serviciostigomoney.pagofacil.com.bo/api/servicio/pagomultiple';
             $laDatos = array("tnTransaccionDePago" =>  $responsetransaccion->values  
                             );
@@ -259,11 +254,10 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                 ));
         
             $response = wp_remote_retrieve_body($laServicioLogin);
-           // error_log("response--" . json_encode($response));
             $response = json_decode($response);
-      
+            error_log("response--tigo" . json_encode($response));
+        // aqui se ara el tema de tigo money 
 
-            //	$tnTokenLogin=$response->token;
             if(isset($response->values)  &&  isset($response->values)   )
             {
                 $parameters_args = array(
@@ -334,22 +328,29 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                             
                             <input type="submit" id="btncompletado" value="Completar orden" >
                         </form>
+                        <input type="Button" style="display:none" id="btnNuevaTransaccion" value="Generar" >
                     </center>
                 </div>
                 <script src="https://code.jquery.com/jquery-3.5.0.min.js" ></script>
             <script>
            var  intervalo ;
-        $(document).ready(function() {
-                    
-            intervalo=setInterval("verificartransaccion('.@$parameters_args["TransaccionDePago"].')",10000);
+            $(document).ready(function() {
+                var lnTransaccionDePago = $("#TransaccionDePago").val();
+                if(lnTransaccionDePago !=  0 )
+                {
+                    intervalo=setInterval("verificartransaccion('.@$parameters_args["TransaccionDePago"].')",15000);
+                }else{
+                    $("#btnNuevaTransaccion").show();
+                }
+            
 
-        });
+            });
 
           
             function verificartransaccion(codigo){
                 var trans=codigo;
                 //  var datos= {TransaccionDePago:trans  };
-                  var urlajax="https://marketplace.pagofacil.com.bo/wp-content/plugins/PluginQrFacil/consultatransaccion.php"; 
+                  var urlajax="https://marketplace.pagofacil.com.bo/wp-content/plugins/PluginQrFacil/consultatransacciontigo.php"; 
               
                   $.ajax({                    
                           url: urlajax,
@@ -363,14 +364,14 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                               success:function(response) {
                                 console.log(response);
                                
-                                    if(response.values.estadoPago == 0 )
+                                    if(response.tipo == 0 )
                                     {
                                         $("#btncompletado").click();
                                     } 
-                                    if(response.values.estadoPago == 1 )
+                                    if(response.tipo == 1 )
                                     {
                                         $("#btncompletado").click();
-                                        alert("No se pudo completar el pago ");
+                                        alert(response.mensaje+ "No se pudo completar el pago ");
                                         clearInterval(intervalo);
                                         
                                     } 

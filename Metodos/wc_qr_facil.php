@@ -136,6 +136,8 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
             $lcMoneda=2;
         }
 
+        $lcNombreCliente= "usuario ".@$orderdata['datos']['billing']['first_name']." ". @$orderdata['datos']['billing']['last_name'];
+      
         ///-----------------------------
         	$arrayitem=$order->get_items();
 				$ArrayProductos= array();
@@ -206,7 +208,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                             'data_format' => 'body',
                         ));
                         $response = wp_remote_retrieve_body($laServicioLogin);
-                        error_log("response--" . json_encode($response));
+                        error_log("response--LOGIN" . json_encode($response));
                         $responsetoken = json_decode($response);
                        
                     //login
@@ -216,21 +218,22 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                     error_log("response--valuestokeb" . json_encode($responsetoken->values));
                     $url = 'http://serviciopagofacil.syscoop.com.bo/api/Transaccion/CrearTransaccionDePago';
                     $laDatos = array("tnCliente" => 9 ,  
-                                   // "tnEmpresa" => 61 ,
-                                    'tcCodigoClienteEmpresa' => 9,
-                                    "tnMetodoPago" => 4 ,
-                                    'tnTelefono' => $lnTelefono,
-                                    "tcFacturaA" => "nombre usuario" ,
-                                    'tnCiNit' => 123456,
-                                    "tcNroPago" => $order_id ,
-                                    'tnMontoClienteEmpresa' => $lnMonto ,
-                                    'tnMontoClienteSyscoop' => 1 ,
-                                    "tcPeriodo" => "Checkout" ,
-                                    'tcImei' => 123456789,
-                                    "taEntidades" => "1,2,3" ,
-                                    "tcCommerceID" => $this->CommerceID,
-                                    "tcParametros" => base64_encode($tcParametros),
-                                    );
+                            "tcApp" => 3  ,
+                             'tcCodigoClienteEmpresa' => 9,
+                             "tnMetodoPago" => 4 ,
+                             'tnTelefono' => $lnTelefono,
+                             "tcFacturaA" => $lcNombreCliente , // "nombre usuario" ,
+                             'tnCiNit' => 123456,
+                             "tcNroPago" => $order_id ,
+                             'tnMontoClienteEmpresa' => $lnMonto ,
+                             'tnMontoClienteSyscoop' => 1 ,
+                             "tcPeriodo" => "Checkout" ,
+                             'tcImei' => 123456789,
+                             "taEntidades" => "1,2,3",
+                             "tcCommerceID" => $this->CommerceID,
+                             "tcParametros" => base64_encode($tcParametros),
+                              
+                            );
                     $laServicioTransaccion = wp_remote_post($url, array(
                         'headers'     => array('Content-Type' => 'application/json; charset=utf-8' ,   'Authorization' => 'Bearer ' . $responsetoken->values),
                         'body'        => json_encode($laDatos, true),
@@ -238,16 +241,15 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                         'data_format' => 'body',
                         ));
                 
-                    $response = wp_remote_retrieve_body($laServicioTransaccion);
-                    // error_log("response--" . json_encode($response));
-                    $response = json_decode($response);
+                        $responsetransaccion = wp_remote_retrieve_body($laServicioTransaccion);
+                        $responsetransaccion = json_decode($responsetransaccion);
+                        error_log("response--transacciondepago " . json_encode($responsetransaccion));
+            
                   
                 // fin transaccion
-
-                error_log("response--valuestrasaccion".Date("y-m-d h:m:s") . json_encode($response));
-                // crear qr 
+                  // crear qr 
                     $url = 'https://servicios.qr.com.bo/api/servicio/generarqr';
-                    $laDatos = array("tnTransaccionDePago" =>  $response->values  );
+                    $laDatos = array("tnTransaccionDePago" =>  $responsetransaccion->values  );
                     $laServicioLogin = wp_remote_post($url, array(
                         'headers'     => array('Content-Type' => 'application/json; charset=utf-8' ,   'Authorization' => 'Bearer ' . $responsetoken->values),
                         'body'        => json_encode($laDatos, true),
@@ -258,7 +260,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                     $response = wp_remote_retrieve_body($laServicioLogin);
                   
                     $response = json_decode($response);
-                    error_log("response--qrgeberar" .Date("y-m-d h:m:s") .json_encode($response));
+                    error_log("response-- qr generar " .Date("y-m-d h:m:s") .json_encode($response));
                   
                 //fin crear qr 
 
@@ -276,6 +278,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                         'tcCommerceID' => $tcCommerceID,
                         'tnImagenQr'=> $laDatosQr->qrImage,
                         'PedidoId'=>$order_id,
+                        'TransaccionDePago'=>$responsetransaccion->values ,
                         'urlreturn'=>$this->UrlReturn
                         );
                     }else{
@@ -324,6 +327,10 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                         <button  onclick="consultarqr()" style="background:#10d8fb;;border-radius:12px;color:aliceblue;-webkit-text-stroke-width:thin;"  > Consultar estado qr</button>
                         <form action="'.$parameters_args["urlreturn"].'" method="post">
                             <input type="text" name="Idpedido" value="'.$parameters_args["PedidoId"].'">
+                            <input type="text" name="TransaccionDePago" value="'.@$parameters_args["TransaccionDePago"].'">
+                            
+                            <input type="submit" id="btncompletado" value="Completar orden" >
+                      
                             <input type="submit" value="Completar orden" >
                         </form>
                     </center>
@@ -347,6 +354,72 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                 }
 
                 $("html, body").animate({scrollTop: $("#divqrfacil").offset().top }, 2000);
+
+                var  intervalo ;
+                $(document).ready(function() {
+                    var lnTransaccionDePago = $("#TransaccionDePago").val();
+                    if(lnTransaccionDePago !=  0 )
+                    {
+                        intervalo=setInterval("verificartransaccion('.@$parameters_args["TransaccionDePago"].')",15000);
+                    }else{
+                        //$("#btnNuevaTransaccion").show();
+                    }
+                
+
+                
+    
+                });
+
+
+                
+                function verificartransaccion(codigo){
+                    var trans=codigo;
+                    //  var datos= {TransaccionDePago:trans  };
+                      var urlajax="https://marketplace.pagofacil.com.bo/wp-content/plugins/PluginQrFacil/consultatransaccionqr.php"; 
+                  
+                      $.ajax({                    
+                              url: urlajax,
+                              data: {TransaccionDePago:trans },
+                              type : "POST",
+                              dataType: "json",
+                              
+                                  beforeSend:function( ) {   
+                                  
+                                  },                    
+                                  success:function(response) {
+                                    console.log(response);
+                                   
+                                        if(response.tipo == 2 )
+                                        {
+                                            $("#btncompletado").click();
+                                        } 
+                                        if(response.tipo == 1 )
+                                        {
+                                            console.log("Pago pendiente ");
+                                            
+                                        } 
+                                        if(response.tipo == 4 )
+                                        {
+                                            $("#btncompletado").click();
+                                            alert(response.mensaje+ "No se pudo completar el pago ");
+                                            clearInterval(intervalo);
+                                            
+                                        } 
+                                    
+    
+                                  },
+                                  error: function (data) {
+                                    console.log(data);
+                                    
+                                      
+                                  },               
+                                  complete:function( ) {
+                                      
+                                  },
+                              });  
+                }
+    
+                
             </script>';	
     }
     
@@ -368,7 +441,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
             );
         } else {
         
-            $parameters_args = $this->get_params_post($order_id);
+         //   $parameters_args = $this->get_params_post($order_id);
             
        /*  
             $payu_args_array = array();
