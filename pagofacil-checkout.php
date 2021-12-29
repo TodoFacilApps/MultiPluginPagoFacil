@@ -82,21 +82,15 @@ if ( ! class_exists( 'WC_Pago_Facil' ) ) :
 
 			return array_merge( $plugin_links, $links );
 		}
-
-
 		private function includes() {
 			include_once dirname( __FILE__ ) . '/Metodos/wc_qr_facil.php';
 			include_once dirname( __FILE__ ) . '/Metodos/wc_tigo_facil.php';
 		}
-		
 		public function add_gateway( $methods ) {
 			array_push( $methods, 'WC_Qr_Facil' );
 			array_push( $methods	, 'WC_Tigo_Facil' );
 			return $methods;
 		}
-
-	
-
 	}
 	add_action( 'plugins_loaded', array( 'WC_Pago_Facil', 'get_instance' ), 0 );
 

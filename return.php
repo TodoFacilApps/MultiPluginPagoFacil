@@ -1,5 +1,7 @@
 <?php
-require_once '../../../wp-blog-header.php';
+//require_once '../../../wp-blog-header.php';
+
+require_once '../../../wp-load.php';
 require_once './pagofacil-checkout.php';
 get_header();
 
@@ -14,23 +16,23 @@ get_header();
 	$orderdata['datos']=$order->get_data();
 
 
-	if($estadopago=='pending payment'){
+	if($estadopago=='pending'){
 		//pendiente
 		$mensajedepago="El Pedido esta pendiente ";
 	}	
 	if($estadopago== 'completed'){
 		//pagada
-		$mensajedepago="El Pedido  se a realizado exito  ";
+		$mensajedepago="El Pedido  se ha realizado exito  ";
 		
 	}
 	if($estadopago=='refunded'){
 		//revertido
-		$mensajedepago="El Pedido se a revertido ";
+		$mensajedepago="El Pedido se ha revertido ";
 		
 	}
 	if($estadopago=='failed'){
 		//anulado
-		$mensajedepago="El Pedido se a anulado";
+		$mensajedepago="El Pedido se ha anulado";
 		
 	}
 	if($estadopago=='processing'){
@@ -57,7 +59,7 @@ get_header();
 		
 			<tr align="right">
 				<td>Valor total</td>
-				<td>$<?php echo $amount = number_format(($order -> get_total()),2,'.',''); ?> </td>
+				<td> <?php echo $amount = number_format(($order -> get_total()),2,'.',''); ?> </td>
 			</tr>
 			
 		</table>

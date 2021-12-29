@@ -9,7 +9,7 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
      * @return void
      */
     public function __construct(){
-        $this->id					= 'tigofacil3';
+        $this->id					= 'tigofacil17';
         $this->icon					= apply_filters('woocomerce_checkout_icon',"https://serviciopagofacil.syscoop.com.bo/Imagenes/MP/tigo-money.png");
         $this->has_fields			= false;
         $this->method_title			= 'Tigo Facil Solo';
@@ -41,7 +41,7 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
          } else {
             add_action( 'woocommerce_update_options_payment_gateways', array( &$this, 'process_admin_options' ) );
         }
-        add_action('woocommerce_receipt_tigofacil', array(&$this, 'receipt_page'));
+        add_action('woocommerce_receipt_tigofacil17', array(&$this, 'receipt_page'));
     }
     
     /**
@@ -141,7 +141,37 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
         {
             $lcMoneda=2;
         }
+        $lcNombreCliente= @$orderdata['datos']['billing']['first_name']." ". @$orderdata['datos']['billing']['last_name'];
+        error_log("response--datosbilling" . json_encode($orderdata['datos']['billing']));
 
+        ////----------------------------
+        $arrayitem=$order->get_items();
+        $ArrayProductos= array();
+        $lcTokenServiceAux="";
+        $lcTokenSecretAux="";
+        $lcCommerceIdAux="";
+        $lbBandera=false;
+        $lnSerial=0;
+
+        foreach ($arrayitem as $key => $value) {
+            $product=$arrayitem[$key]->get_product();
+            $lnSerial=$lnSerial+1;
+            $fecha=$product->get_date_created();
+            $product_detalle=array( 
+                                    "Serial"=>$lnSerial,
+                                    "Producto" =>  $product->get_name(), 
+                                    "LinkPago" => 0 , 
+                                    'Cantidad'=>  $value->get_quantity(),
+
+                                    "Precio"=>  $product->get_price() ,  
+                                    "Descuento" => 0, 
+                                    "Total"=> $value->get_quantity() * $product->get_price() 
+                                    );
+            array_push($ArrayProductos , $product_detalle );
+
+            
+    }
+        //--------------------------------
         /// aqui se empezara a encriptar
         // aqui todas estas variables son las que se van a encriptar para poder ingresar al checkout pagofacil 
         $lcPedidoID=$order_id ;
@@ -150,7 +180,7 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
         $lnMonto=$amount;
         $lcParametro1="$this->UrlCallBack";
         $lcParametro2="$this->UrlReturn";
-        $lcParametro3="";
+        $lcParametro3= json_encode($ArrayProductos);
         $lcParametro4=trim("");
 
         // Los Tokens Entregados al comercio via Email
@@ -188,18 +218,21 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
             error_log("response--values" . json_encode($responsetoken->values));
             $url = 'http://serviciopagofacil.syscoop.com.bo/api/Transaccion/CrearTransaccionDePago';
             $laDatos = array("tnCliente" => 9 ,  
-                            // "tnEmpresa" => 61 ,
+                            "tcApp" => 3  ,
                              'tcCodigoClienteEmpresa' => 9,
                              "tnMetodoPago" => 1 ,
                              'tnTelefono' => $lnTelefono,
-                             "tcFacturaA" => "nombre usuario" ,
+                             "tcFacturaA" => $lcNombreCliente , // "nombre usuario" ,
                              'tnCiNit' => 123456,
                              "tcNroPago" => $order_id ,
                              'tnMontoClienteEmpresa' => $lnMonto ,
                              'tnMontoClienteSyscoop' => 1 ,
                              "tcPeriodo" => "Checkout" ,
                              'tcImei' => 123456789,
-                             "taEntidades" => "1,2,3" 
+                             "taEntidades" => "1,2,3",
+                             "tcCommerceID" => $this->CommerceID,
+                             "tcParametros" => base64_encode($tcParametros),
+                              
                             );
             $laServicioLogin = wp_remote_post($url, array(
                 'headers'     => array('Content-Type' => 'application/json; charset=utf-8' ,   'Authorization' => 'Bearer ' . $responsetoken->values),
@@ -208,19 +241,15 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                 'data_format' => 'body',
                 ));
         
-            $response = wp_remote_retrieve_body($laServicioLogin);
+            $responsetransaccion = wp_remote_retrieve_body($laServicioLogin);
            // error_log("response--" . json_encode($response));
-            $response = json_decode($response);
-            echo '<pre>'; 
-            echo "resultado tranaccion ";
-            print_r($response );
-            echo '</pre>' ;
-
+            $responsetransaccion = json_decode($responsetransaccion);
+       
             
         
-            error_log("response--values" . json_encode($response->values));
+            error_log("response--values" . json_encode($responsetransaccion->values));
             $url = 'http://serviciostigomoney.pagofacil.com.bo/api/servicio/pagomultiple';
-            $laDatos = array("tnTransaccionDePago" =>  $response->values  
+            $laDatos = array("tnTransaccionDePago" =>  $responsetransaccion->values  
                             );
             $laServicioLogin = wp_remote_post($url, array(
                 'headers'     => array('Content-Type' => 'application/json; charset=utf-8' ,   'Authorization' => 'Bearer ' . $responsetoken->values),
@@ -232,32 +261,22 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
             $response = wp_remote_retrieve_body($laServicioLogin);
            // error_log("response--" . json_encode($response));
             $response = json_decode($response);
-            echo '<pre>'; 
-            echo "resultado generar procesotigomoney  ";
-            print_r($response );
-            echo '</pre>' ;
+      
 
             //	$tnTokenLogin=$response->token;
             if(isset($response->values)  &&  isset($response->values)   )
             {
-                error_log("response--values TIGOFACIL PABLOSERVICES" . json_encode($response->values));
-               // $laValues=explode(";", $response->values);
-            
-                //error_log("response--values" . json_encode($laValues));
-                //$/laDatosQr=json_decode($laValues[1]);
-                
                 $parameters_args = array(
                 'tcParametros' => base64_encode($tcParametros),
                 'tcCommerceID' => $tcCommerceID,
-             //   'tnImagenQr'=> $laDatosQr->qrImage,
                 'PedidoId'=>$order_id,
+                'TransaccionDePago'=>$responsetransaccion->values ,
                 'urlreturn'=>$this->UrlReturn
                 );
             } else {
                 $parameters_args = array(
                     'tcParametros' => base64_encode($tcParametros),
                     'tcCommerceID' => $tcCommerceID,
-                 //   'tnImagenQr'=> $laDatosQr->qrImage,
                     'PedidoId'=>$order_id,
                     'urlreturn'=>$this->UrlReturn
                     );
@@ -273,9 +292,6 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                 'urlreturn'=>$th->getMessage()
                 );
         }
-
-
-
         return $parameters_args;
 
     }
@@ -291,10 +307,7 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
      */
     public function generate_checkout_form($order_id){			
         $parameters_args = $this->get_params_posttigo($order_id);
-        echo '<pre>'; 
-        echo "ongresoal formulario del chckout ";
-        print_r($parameters_args );
-        echo '</pre>' ;
+       
       /*  
         foreach($parameters_args as $key => $value){
             $payu_args_array[] = $key . '=' . $value;
@@ -311,17 +324,72 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
         return '<div id="divtigofacil">
                     <center>
                             <div id="content">
-                            <div class="loading"><img  style="width: 100px;" src="https://acegif.com/wp-content/uploads/loading-25.gif" alt="loading" /><br/>La Transaccion esta siendo procesada...</div>
-                            </div>
                             <h1>Tigo Money  </h1>
-                        <form style="display:none"  action="'.@$parameters_args["urlreturn"].'" method="post">
+                                <div class="loading"><img  style="width: 100px;" src="https://acegif.com/wp-content/uploads/loading-25.gif" alt="loading" /><br/>La Transaccion esta siendo procesada...</div>
+                            </div>
+                        
+                        <form   action="'.@$parameters_args["urlreturn"].'" method="post">
                             <input type="text" name="Idpedido" value="'.@$parameters_args["PedidoId"].'">
-                            <input type="submit" value="Completar orden" >
+                            <input type="text" name="TransaccionDePago" value="'.@$parameters_args["TransaccionDePago"].'">
+                            
+                            <input type="submit" id="btncompletado" value="Completar orden" >
                         </form>
                     </center>
                 </div>
                 <script src="https://code.jquery.com/jquery-3.5.0.min.js" ></script>
             <script>
+           var  intervalo ;
+        $(document).ready(function() {
+                    
+            intervalo=setInterval("verificartransaccion('.@$parameters_args["TransaccionDePago"].')",10000);
+
+        });
+
+          
+            function verificartransaccion(codigo){
+                var trans=codigo;
+                //  var datos= {TransaccionDePago:trans  };
+                  var urlajax="https://marketplace.pagofacil.com.bo/wp-content/plugins/PluginQrFacil/consultatransaccion.php"; 
+              
+                  $.ajax({                    
+                          url: urlajax,
+                          data: {TransaccionDePago:trans },
+                          type : "POST",
+                          dataType: "json",
+                          
+                              beforeSend:function( ) {   
+                              
+                              },                    
+                              success:function(response) {
+                                console.log(response);
+                               
+                                    if(response.values.estadoPago == 0 )
+                                    {
+                                        $("#btncompletado").click();
+                                    } 
+                                    if(response.values.estadoPago == 1 )
+                                    {
+                                        $("#btncompletado").click();
+                                        alert("No se pudo completar el pago ");
+                                        clearInterval(intervalo);
+                                        
+                                    } 
+                                
+
+                              },
+                              error: function (data) {
+                                console.log(data);
+                                
+                                  
+                              },               
+                              complete:function( ) {
+                                  
+                              },
+                          });  
+            }
+
+
+
             </script>';	
     }
 
@@ -340,7 +408,7 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                 $order->id, add_query_arg('key', $order->order_key, get_permalink(get_option('woocommerce_pay_page_id'))))
             );
         } else {
-        
+        /*
             $parameters_args = $this->get_params_posttigo($order_id);
             
             $payu_args_array = array();
@@ -348,6 +416,7 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                 $payu_args_array[] = $key . '=' . $value;
             }
             $params_post = implode('&', $payu_args_array);
+            */
         
             return array(
                 'result' => 'success',

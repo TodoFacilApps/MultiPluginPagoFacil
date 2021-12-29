@@ -9,7 +9,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
      * @return void
      */
     public function __construct(){
-        $this->id					= 'qrfacil3';
+        $this->id					= 'qrfacil17';
         $this->icon					= apply_filters('woocomerce_checkout_icon', "https://serviciopagofacil.syscoop.com.bo/Imagenes/MP/logo_qr.png");
         $this->has_fields			= false;
         $this->method_title			= 'Qr Facil solos';
@@ -41,7 +41,9 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
          } else {
             add_action( 'woocommerce_update_options_payment_gateways', array( &$this, 'process_admin_options' ) );
         }
-        add_action('woocommerce_receipt_qrfacil', array(&$this, 'receipt_page'));
+        // este metodo e la parte donde dice qrfacil debe ser igual que el id de el plugonin 
+
+        add_action('woocommerce_receipt_qrfacil17', array(&$this, 'receipt_page'));
     }
     
     /**
@@ -134,128 +136,155 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
             $lcMoneda=2;
         }
 
+        ///-----------------------------
+        	$arrayitem=$order->get_items();
+				$ArrayProductos= array();
+				$lcTokenServiceAux="";
+				$lcTokenSecretAux="";
+				$lcCommerceIdAux="";
+				$lbBandera=false;
+				$lnSerial=0;
+
+				foreach ($arrayitem as $key => $value) {
+					$product=$arrayitem[$key]->get_product();
+					$lnSerial=$lnSerial+1;
+					$fecha=$product->get_date_created();
+					$product_detalle=array( 
+											"Serial"=>$lnSerial,
+											"Producto" =>  $product->get_name(), 
+											"LinkPago" => 0 , 
+											'Cantidad'=>  $value->get_quantity(),
+
+											"Precio"=>  $product->get_price() ,  
+											"Descuento" => 0, 
+											"Total"=> $value->get_quantity() * $product->get_price() 
+											);
+					array_push($ArrayProductos , $product_detalle );
+
+					
+			}
+
+            //-------
         /// aqui se empezara a encriptar
         // aqui todas estas variables son las que se van a encriptar para poder ingresar al checkout pagofacil 
-        $lcPedidoID=$order_id ;
-        $lcEmail= $orderdata['datos']['billing']['email'];
-        $lnTelefono=$orderdata['datos']['billing']['phone']; ; //$loFormDatos['Celular'] ;
-        $lnMonto=$amount;
-        $lcParametro1="$this->UrlCallBack";
-        $lcParametro2="$this->UrlReturn";
-        $lcParametro3="";
-        $lcParametro4=trim("");
+            $lcPedidoID=$order_id ;
+            $lcEmail= $orderdata['datos']['billing']['email'];
+            $lnTelefono=$orderdata['datos']['billing']['phone']; ; //$loFormDatos['Celular'] ;
+            $lnMonto=$amount;
+            $lcParametro1="$this->UrlCallBack";
+            $lcParametro2="$this->UrlReturn";
+            $lcParametro3= json_encode($ArrayProductos);
+            $lcParametro4=trim("");
 
-        // Los Tokens Entregados al comercio via Email
-        $tcCommerceID =$this->CommerceID;
-        $lcTokenServicio=$this->TokenServicio;
-        $lcTokenSecret=$this->TokenSecret;
-        // Aquí se concatena todos los datos para crear la firma
-        $lcCadenaAFirmar= "$lcTokenServicio|$lcEmail|$lnTelefono|$lcPedidoID|$lnMonto|$lcMoneda|$lcParametro1|$lcParametro2|$lcParametro3|$lcParametro4" ;
-        // aqui se genera la firma  con la variable $lcCadenaAFirmar
-        $lcFirma= hash('sha256', $lcCadenaAFirmar);
-        // aqui  se concatena de nuevo pero utilizando la firma al comienzo 
-        $lcDatosPago="$lcFirma|$lcEmail|$lnTelefono|$lcPedidoID|$lnMonto|$lcMoneda|$lcParametro1|$lcParametro2|$lcParametro3|$lcParametro4" ;
-        //Esto es el proceso de encriptacion que ocupa php 
-        $lnSizeDatosPago=strlen($lcDatosPago);
-        $lcDatosPago=str_pad($lcDatosPago,($lnSizeDatosPago+8-($lnSizeDatosPago%8)), "\0");
-        //aqui se genera y se guarda  la variable tcparametros que es un encriptado de los datos
-        $tcParametros =  openssl_encrypt($lcDatosPago, "DES-EDE3", $lcTokenSecret ,OPENSSL_ZERO_PADDING) ;
+            // Los Tokens Entregados al comercio via Email
+            $tcCommerceID =$this->CommerceID;
+            $lcTokenServicio=$this->TokenServicio;
+            $lcTokenSecret=$this->TokenSecret;
+            // Aquí se concatena todos los datos para crear la firma
+            $lcCadenaAFirmar= "$lcTokenServicio|$lcEmail|$lnTelefono|$lcPedidoID|$lnMonto|$lcMoneda|$lcParametro1|$lcParametro2|$lcParametro3|$lcParametro4" ;
+            // aqui se genera la firma  con la variable $lcCadenaAFirmar
+            $lcFirma= hash('sha256', $lcCadenaAFirmar);
+            // aqui  se concatena de nuevo pero utilizando la firma al comienzo 
+            $lcDatosPago="$lcFirma|$lcEmail|$lnTelefono|$lcPedidoID|$lnMonto|$lcMoneda|$lcParametro1|$lcParametro2|$lcParametro3|$lcParametro4" ;
+            //Esto es el proceso de encriptacion que ocupa php 
+            $lnSizeDatosPago=strlen($lcDatosPago);
+            $lcDatosPago=str_pad($lcDatosPago,($lnSizeDatosPago+8-($lnSizeDatosPago%8)), "\0");
+            //aqui se genera y se guarda  la variable tcparametros que es un encriptado de los datos
+            $tcParametros =  openssl_encrypt($lcDatosPago, "DES-EDE3", $lcTokenSecret ,OPENSSL_ZERO_PADDING) ;
             //aqui estaran los datos que se mandaran al formulario  que ingresara al checkout 
         // aqui vendra la parte de  login ------------------------------------------------------------------------
         
-        // aqui esta haciendo el login para poder ocupar los servicios
-            $url = 'https://servicios.qr.com.bo/api/login';
-            $laDatos = array("TokenService" => $lcTokenServicio,  "TokenSecret" => $lcTokenSecret , 'UrlCallBack' =>  $this->UrlCallBack  , 'UrlReturn' => $this->UrlReturn );
-            $laServicioLogin = wp_remote_post($url, array(
-                'headers'     => array('Content-Type' => 'application/json; charset=utf-8'  ),
-                'body'        => json_encode($laDatos, true),
-                'method'      => 'POST',
-                'data_format' => 'body',
-            ));
-            $response = wp_remote_retrieve_body($laServicioLogin);
-            error_log("response--" . json_encode($response));
-            $responsetoken = json_decode($response);
-            echo '<pre>'; 
-            print_r($responsetoken );
-            echo '</pre>' ;
 
+                // aqui esta haciendo el login para poder ocupar los servicios
+                    //  login 
+                        $url = 'https://servicios.qr.com.bo/api/login';
+                        $laDatos = array("TokenService" => $lcTokenServicio,  "TokenSecret" => $lcTokenSecret , 'UrlCallBack' =>  $this->UrlCallBack  , 'UrlReturn' => $this->UrlReturn );
+                        $laServicioLogin = wp_remote_post($url, array(
+                            'headers'     => array('Content-Type' => 'application/json; charset=utf-8'  ),
+                            'body'        => json_encode($laDatos, true),
+                            'method'      => 'POST',
+                            'data_format' => 'body',
+                        ));
+                        $response = wp_remote_retrieve_body($laServicioLogin);
+                        error_log("response--" . json_encode($response));
+                        $responsetoken = json_decode($response);
+                       
+                    //login
 
-            // aqui se hara el tema de la genracion de la transaccion
-            error_log("response--values" . json_encode($responsetoken->values));
-            $url = 'http://serviciopagofacil.syscoop.com.bo/api/Transaccion/CrearTransaccionDePago';
-            $laDatos = array("tnCliente" => 9 ,  
-                             //"tnEmpresa" => 61 ,
-                             'tcCodigoClienteEmpresa' => 9,
-                             "tnMetodoPago" => 4 ,
-                             'tnTelefono' => $lnTelefono,
-                             "tcFacturaA" => "nombre usuario" ,
-                             'tnCiNit' => 123456,
-                             "tcNroPago" => $order_id ,
-                             'tnMontoClienteEmpresa' => $lnMonto ,
-                             'tnMontoClienteSyscoop' => 1 ,
-                             "tcPeriodo" => "Checkout" ,
-                             'tcImei' => 123456789,
-                             "taEntidades" => "1,2,3" 
-                            );
-            $laServicioTransaccion = wp_remote_post($url, array(
-                'headers'     => array('Content-Type' => 'application/json; charset=utf-8' ,   'Authorization' => 'Bearer ' . $responsetoken->values),
-                'body'        => json_encode($laDatos, true),
-                'method'      => 'POST',
-                'data_format' => 'body',
-                ));
-        
-            $response = wp_remote_retrieve_body($laServicioTransaccion);
-           // error_log("response--" . json_encode($response));
-            $response = json_decode($response);
-            echo '<pre>'; 
-            echo "resultado tranaccion ";
-            print_r($response );
-            echo '</pre>' ;
-
-            
-        
-        error_log("response--values" . json_encode($response->values));
-            $url = 'https://servicios.qr.com.bo/api/servicio/generarqr';
-            $laDatos = array("tnTransaccionDePago" =>  $response->values  
-                            );
-            $laServicioLogin = wp_remote_post($url, array(
-                'headers'     => array('Content-Type' => 'application/json; charset=utf-8' ,   'Authorization' => 'Bearer ' . $responsetoken->values),
-                'body'        => json_encode($laDatos, true),
-                'method'      => 'POST',
-                'data_format' => 'body',
-                ));
-        
-            $response = wp_remote_retrieve_body($laServicioLogin);
-           // error_log("response--" . json_encode($response));
-            $response = json_decode($response);
-            echo '<pre>'; 
-            echo "resultado generar qr ";
-            print_r($response );
-            echo '</pre>' ;
-
-            //	$tnTokenLogin=$response->token;
-            if(isset($response->values)  &&  isset($response->values)   )
-            {
-                error_log("response--values genearaqr" . json_encode($response->values));
-                $laValues=explode(";", $response->values);
-            
-                //error_log("response--values" . json_encode($laValues));
-                $laDatosQr=json_decode($laValues[1]);
+                // aqui se hara el tema de la genracion de la transaccion
+                //Transaccion
+                    error_log("response--valuestokeb" . json_encode($responsetoken->values));
+                    $url = 'http://serviciopagofacil.syscoop.com.bo/api/Transaccion/CrearTransaccionDePago';
+                    $laDatos = array("tnCliente" => 9 ,  
+                                   // "tnEmpresa" => 61 ,
+                                    'tcCodigoClienteEmpresa' => 9,
+                                    "tnMetodoPago" => 4 ,
+                                    'tnTelefono' => $lnTelefono,
+                                    "tcFacturaA" => "nombre usuario" ,
+                                    'tnCiNit' => 123456,
+                                    "tcNroPago" => $order_id ,
+                                    'tnMontoClienteEmpresa' => $lnMonto ,
+                                    'tnMontoClienteSyscoop' => 1 ,
+                                    "tcPeriodo" => "Checkout" ,
+                                    'tcImei' => 123456789,
+                                    "taEntidades" => "1,2,3" ,
+                                    "tcCommerceID" => $this->CommerceID,
+                                    "tcParametros" => base64_encode($tcParametros),
+                                    );
+                    $laServicioTransaccion = wp_remote_post($url, array(
+                        'headers'     => array('Content-Type' => 'application/json; charset=utf-8' ,   'Authorization' => 'Bearer ' . $responsetoken->values),
+                        'body'        => json_encode($laDatos, true),
+                        'method'      => 'POST',
+                        'data_format' => 'body',
+                        ));
                 
-                $parameters_args = array(
-                'tcParametros' => base64_encode($tcParametros),
-                'tcCommerceID' => $tcCommerceID,
-                'tnImagenQr'=> $laDatosQr->qrImage,
-                'PedidoId'=>$order_id,
-                'urlreturn'=>$this->UrlReturn
-                );
-            }else{
-                error_log("response--values genearaqr" . json_encode($response->values));
-                $parameters_args = array(
-                'PedidoId'=>$order_id,
-                'urlreturn'=>$this->UrlReturn
-                );
-            }
+                    $response = wp_remote_retrieve_body($laServicioTransaccion);
+                    // error_log("response--" . json_encode($response));
+                    $response = json_decode($response);
+                  
+                // fin transaccion
+
+                error_log("response--valuestrasaccion".Date("y-m-d h:m:s") . json_encode($response));
+                // crear qr 
+                    $url = 'https://servicios.qr.com.bo/api/servicio/generarqr';
+                    $laDatos = array("tnTransaccionDePago" =>  $response->values  );
+                    $laServicioLogin = wp_remote_post($url, array(
+                        'headers'     => array('Content-Type' => 'application/json; charset=utf-8' ,   'Authorization' => 'Bearer ' . $responsetoken->values),
+                        'body'        => json_encode($laDatos, true),
+                        'method'      => 'POST',
+                        'data_format' => 'body',
+                        ));
+                
+                    $response = wp_remote_retrieve_body($laServicioLogin);
+                  
+                    $response = json_decode($response);
+                    error_log("response--qrgeberar" .Date("y-m-d h:m:s") .json_encode($response));
+                  
+                //fin crear qr 
+
+                    //	$tnTokenLogin=$response->token;
+                    if(isset($response->values)    )
+                    {
+                        error_log("response--values generaqr" . json_encode($response));
+                        $laValues=explode(";", $response->values);
+                    
+                        //error_log("response--values" . json_encode($laValues));
+                        $laDatosQr=json_decode($laValues[1]);
+                        
+                        $parameters_args = array(
+                        'tcParametros' => base64_encode($tcParametros),
+                        'tcCommerceID' => $tcCommerceID,
+                        'tnImagenQr'=> $laDatosQr->qrImage,
+                        'PedidoId'=>$order_id,
+                        'urlreturn'=>$this->UrlReturn
+                        );
+                    }else{
+                        error_log("response--values genearaqr" . json_encode($response));
+                        $parameters_args = array(
+                        'PedidoId'=>$order_id,
+                        'urlreturn'=>$this->UrlReturn
+                        );
+                    }
             
             
         return $parameters_args;
@@ -275,7 +304,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
         $parameters_args = $this->get_params_post($order_id);
         $payu_args_array = array();
         
-        /*foreach($parameters_args as $key => $value){
+        foreach($parameters_args as $key => $value){
             $payu_args_array[] = $key . '=' . $value;
         }
         $params_post = implode('&', $payu_args_array);
@@ -283,7 +312,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
         $payu_args_array = array();
         foreach($parameters_args as $key => $value){
           $payu_args_array[] = "<input type='hidden' name='$key' value='$value'/>";
-        }*/
+        }
         
 
         //return '<form  action="https://checkout.pagofacil.com.bo/es/pay" method="post" id="pagofacil_checkout_form123"><input style="background:#10d8fb;;border-radius:12px;color:aliceblue;-webkit-text-stroke-width:thin;"  type="submit" id="submit_payu_latam" value="' .__('Pagar', 'pagofacilcheckout').'" /></form>';
@@ -332,6 +361,8 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
         $order = new WC_Order($order_id);
         $woocommerce->cart->empty_cart();
         if (version_compare(WOOCOMMERCE_VERSION, '2.0.19', '<=' )) {
+            //error_log("ingresocon exitos version" . json_encode($parameters_args));
+          
             return array('result' => 'success', 'redirect' => add_query_arg('order',
                 $order->id, add_query_arg('key', $order->order_key, get_permalink(get_option('woocommerce_pay_page_id'))))
             );
@@ -339,12 +370,13 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
         
             $parameters_args = $this->get_params_post($order_id);
             
+       /*  
             $payu_args_array = array();
             foreach($parameters_args as $key => $value){
                 $payu_args_array[] = $key . '=' . $value;
             }
             $params_post = implode('&', $payu_args_array);
-        
+        */
             return array(
                 'result' => 'success',
                 'redirect' =>  $order->get_checkout_payment_url( true )
