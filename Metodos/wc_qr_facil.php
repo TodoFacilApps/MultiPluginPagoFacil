@@ -40,10 +40,13 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
             add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( &$this, 'process_admin_options' ) );
          } else {
             add_action( 'woocommerce_update_options_payment_gateways', array( &$this, 'process_admin_options' ) );
+            
         }
         // este metodo e la parte donde dice qrfacil debe ser igual que el id de el plugonin 
 
         add_action('woocommerce_receipt_qrfacil17', array(&$this, 'receipt_page'));
+      
+
     }
     
     /**
@@ -97,7 +100,17 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
         $this -> generate_settings_html();
         echo '</table>';
     }
+
+
     
+    public function payment_fields(){
+        echo '<p> Se generara un qr que debera scanear con la app de su banco  </p>' ;
+    }
+
+ 
+
+
+   
     /**
      * Atiende el evento de checkout y genera la pagina con el formularion de pago.
      * Solo para la versiones anteriores a la 2.1.0 de WC
@@ -325,7 +338,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                         <img id="idimagen" style="width:300px ; height:300px" src="data:image/jpeg;base64 , '.@$parameters_args["tnImagenQr"].'" alt="">
                         <button onclick="descargar()" style="background:#10d8fb;;border-radius:12px;color:aliceblue;-webkit-text-stroke-width:thin;"  > Descargar qr</button>
                         <button  onclick="consultarqr()" style="background:#10d8fb;;border-radius:12px;color:aliceblue;-webkit-text-stroke-width:thin;"  > Consultar estado qr</button>
-                        <form action="'.$parameters_args["urlreturn"].'" method="post">
+                        <form style="display:none" action="'.$parameters_args["urlreturn"].'" method="post">
                             <input type="text" name="Idpedido" value="'.$parameters_args["PedidoId"].'">
                             <input type="text" name="TransaccionDePago" value="'.@$parameters_args["TransaccionDePago"].'">
                             
@@ -457,6 +470,9 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
         }
     }
     
+
+
+    
     /**
      * Retorna la configuracion del api key
      */
@@ -464,3 +480,18 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
         return $this->settings['api_key'];
     }
 }
+
+function payment_gateway_description( $description, $gateway_id ) {
+
+    if( 'qrfacil' === $gateway_id ) {
+        // you can use HTML tags here
+        $description = 'Pay with cash upon delivery. Easy-breezy ;)';
+    }else{
+        $description =' --  Pay with cash upon delivery. Easy-breezy ;)';
+        
+    }
+
+    return $description;
+}
+
+add_filter( 'woocommerce_gateway_description', 'payment_gateway_description', 25, 2 );

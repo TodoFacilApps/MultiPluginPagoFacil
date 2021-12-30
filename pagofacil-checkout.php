@@ -53,6 +53,9 @@ if ( ! class_exists( 'WC_Pago_Facil' ) ) :
 				
 			
 		}
+		 
+		
+
 
 		public static function get_instance() {
 			// If the single instance hasn't been set, set it now.
@@ -75,9 +78,13 @@ if ( ! class_exists( 'WC_Pago_Facil' ) ) :
 			if ( defined( 'WC_VERSION' ) && version_compare( WC_VERSION, '2.1', '>=' ) ) {
 				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_qr_facil' ) ) . '">' . __( 'Qr Facil Settings', 'PagoFacil-woocommerce' ) . '</a>';
 				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_tigo_facil' ) ) . '">' . __( 'Tigo Facil Settings', 'PagoFacil-woocommerce' ) . '</a>';
+				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_multi_facil' ) ) . '">' . __( 'Multi Facil Settings', 'PagoFacil-woocommerce' ) . '</a>';
+		
 			} else {
 				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_qr_facil' ) ) . '">' . __( 'Qr Facil Settings', 'PagoFacil-woocommerce' ) . '</a>';
 				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_tigo_facil' ) ) . '">' . __( 'Tigo Facil Settings', 'PagoFacil-woocommerce' ) . '</a>';
+				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_multi_facil' ) ) . '">' . __( 'Multi Facil Settings', 'PagoFacil-woocommerce' ) . '</a>';
+		
 			}
 
 			return array_merge( $plugin_links, $links );
@@ -85,10 +92,14 @@ if ( ! class_exists( 'WC_Pago_Facil' ) ) :
 		private function includes() {
 			include_once dirname( __FILE__ ) . '/Metodos/wc_qr_facil.php';
 			include_once dirname( __FILE__ ) . '/Metodos/wc_tigo_facil.php';
+			include_once dirname( __FILE__ ) . '/Metodos/wc_multi_facil.php';
+			
+			
 		}
 		public function add_gateway( $methods ) {
 			array_push( $methods, 'WC_Qr_Facil' );
 			array_push( $methods	, 'WC_Tigo_Facil' );
+			array_push( $methods	, 'WC_Multi_Facil' );
 			return $methods;
 		}
 	}

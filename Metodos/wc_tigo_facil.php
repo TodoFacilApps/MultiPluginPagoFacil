@@ -83,9 +83,6 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
         );
     }
 
- /*   public function payment_fields(){
-        echo '<p>  se enviara un codigo a  su numero de telofono el cual tendra que digitar en la siguiente vista </p>' ;
-    }
     
     /**
      * Muestra el fomrulario en el admin con los campos de configuracion del gateway PayU Latam
@@ -99,7 +96,13 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
         $this -> generate_settings_html();
         echo '</table>';
     }
+   
     
+
+    public function payment_fields(){
+        echo '<p> Se enviara un codigo de confirmacion al numero de telefono   </p>' ;
+    }
+
     /**
      * Atiende el evento de checkout y genera la pagina con el formularion de pago.
      * Solo para la versiones anteriores a la 2.1.0 de WC
@@ -289,6 +292,9 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
         return $parameters_args;
 
     }
+
+   
+
             
     /**
      * Metodo que genera el formulario con los datos de pago
@@ -434,3 +440,4 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
     }
     
 } 
+
