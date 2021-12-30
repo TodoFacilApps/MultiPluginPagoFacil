@@ -9,12 +9,12 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
      * @return void
      */
     public function __construct(){
-        $this->id					= 'tigofacil17';
+        $this->id					= 'tigomoney';
         $this->icon					= apply_filters('woocomerce_checkout_icon',"https://serviciopagofacil.syscoop.com.bo/Imagenes/MP/tigo-money.png");
         $this->has_fields			= false;
-        $this->method_title			= 'Tigo Facil Solo';
-        $this->method_description	= 'Integración de Woocommerce  a nuestro TIGOFACIL solo';
-        $this->title = 'TIGOFACIL';
+        $this->method_title			= 'TigoMoney';
+        $this->method_description	= 'Integración de Woocommerce  para pagar mediante el metodo de pago TigoMoney ';
+        $this->title = 'TigoMoney';
         
         $this->init_form_fields();
         $this->init_settings();
@@ -41,7 +41,7 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
          } else {
             add_action( 'woocommerce_update_options_payment_gateways', array( &$this, 'process_admin_options' ) );
         }
-        add_action('woocommerce_receipt_tigofacil17', array(&$this, 'receipt_page'));
+        add_action('woocommerce_receipt_tigomoney', array(&$this, 'receipt_page'));
     }
     
     /**
@@ -73,12 +73,12 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                 'title' => __('Url Return', 'pagofacil_checkout'),
                 'type' => 'text',
                 'description' => __('URL de la página mostrada después de finalizar el pago. No olvide cambiar su dominio', 'tigofacil'),
-                'default' => __($_SERVER[ 'HTTP_HOST'].'/wp-content/plugins/pluginqr/return.php', 'tigofacil')),
+                'default' => __('https://'.$_SERVER[ 'HTTP_HOST'].'/wp-content/plugins/MultiPluginPagoFacil/return.php', 'tigofacil')),
             'UrlCallBack' => array(
                 'title' => __('Url Callback', 'pagofacil_checkout'),
                 'type' => 'text',
                 'description' => __('URL de la página mostrada después de finalizar el pago. No olvide cambiar su dominio ', 'tigofacil'),
-                'default' => __($_SERVER[ 'HTTP_HOST'].'/wp-content/plugins/pluginqr/callback.php', 'tigofacil'))
+                'default' => __('https://'.$_SERVER[ 'HTTP_HOST'].'/wp-content/plugins/MultiPluginPagoFacil/callback.php', 'tigofacil'))
             
         );
     }
@@ -219,6 +219,7 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                              'tcCodigoClienteEmpresa' => 9,
                              "tnMetodoPago" => 1 ,
                              'tnTelefono' => $lnTelefono,
+                             'tcCorreo' => $lcEmail,
                              "tcFacturaA" => $lcNombreCliente , // "nombre usuario" ,
                              'tnCiNit' => 123456,
                              "tcNroPago" => $order_id ,
@@ -355,8 +356,8 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
           
             function verificartransaccion(codigo){
                 var trans=codigo;
-                //  var datos= {TransaccionDePago:trans  };
-                  var urlajax="https://marketplace.pagofacil.com.bo/wp-content/plugins/PluginQrFacil/consultatransacciontigo.php"; 
+                  var urlajax="https://'.$_SERVER[ "HTTP_HOST"].'/wp-content/plugins/MultiPluginPagoFacil/consultatransacciontigo.php"; 
+                  
               
                   $.ajax({                    
                           url: urlajax,

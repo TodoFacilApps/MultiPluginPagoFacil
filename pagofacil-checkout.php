@@ -1,6 +1,6 @@
 <?php
 /*
-	Plugin Name: PAGO FACIL Bolivia Payment Gateway 
+	Plugin Name: PagoFacil Bolivia Payment Gateway 
 	Plugin URI: https://pagofacil.com.bo/
 	Description: Plugin de integracion entre Wordpress-Woocommerce y la pasarela de pago PagoFacil Bolivia y sus complementos 	
 	Version: 1.0
@@ -24,7 +24,6 @@
 	along with this program; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-//add_action('plugins_loaded', 'Pago_Facil_gateway', 0);
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -76,13 +75,13 @@ if ( ! class_exists( 'WC_Pago_Facil' ) ) :
 			$plugin_links = array();
 
 			if ( defined( 'WC_VERSION' ) && version_compare( WC_VERSION, '2.1', '>=' ) ) {
-				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_qr_facil' ) ) . '">' . __( 'Qr Facil Settings', 'PagoFacil-woocommerce' ) . '</a>';
-				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_tigo_facil' ) ) . '">' . __( 'Tigo Facil Settings', 'PagoFacil-woocommerce' ) . '</a>';
+				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_qr_facil' ) ) . '">' . __( 'Qr  Settings', 'PagoFacil-woocommerce' ) . '</a>';
+				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_tigo_facil' ) ) . '">' . __( 'Tigo Money Settings', 'PagoFacil-woocommerce' ) . '</a>';
 				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_multi_facil' ) ) . '">' . __( 'Multi Facil Settings', 'PagoFacil-woocommerce' ) . '</a>';
 		
 			} else {
-				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_qr_facil' ) ) . '">' . __( 'Qr Facil Settings', 'PagoFacil-woocommerce' ) . '</a>';
-				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_tigo_facil' ) ) . '">' . __( 'Tigo Facil Settings', 'PagoFacil-woocommerce' ) . '</a>';
+				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_qr_facil' ) ) . '">' . __( 'Qr Settings', 'PagoFacil-woocommerce' ) . '</a>';
+				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_tigo_facil' ) ) . '">' . __( 'Tigo Money Settings', 'PagoFacil-woocommerce' ) . '</a>';
 				$plugin_links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_multi_facil' ) ) . '">' . __( 'Multi Facil Settings', 'PagoFacil-woocommerce' ) . '</a>';
 		
 			}

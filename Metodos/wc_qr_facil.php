@@ -9,12 +9,12 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
      * @return void
      */
     public function __construct(){
-        $this->id					= 'qrfacil17';
+        $this->id					= 'qr';
         $this->icon					= apply_filters('woocomerce_checkout_icon', "https://serviciopagofacil.syscoop.com.bo/Imagenes/MP/logo_qr.png");
         $this->has_fields			= false;
-        $this->method_title			= 'Qr Facil solos';
-        $this->method_description	= 'Integración de Woocommerce  a nuestro QRFACIL  solo';
-        $this->title = 'QRFACIL';
+        $this->method_title			= 'Qr';
+        $this->method_description	= 'Integración de Woocommerce para pago con QR';
+        $this->title = 'QR';
         
         $this->init_form_fields();
         $this->init_settings();
@@ -44,7 +44,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
         }
         // este metodo e la parte donde dice qrfacil debe ser igual que el id de el plugonin 
 
-        add_action('woocommerce_receipt_qrfacil17', array(&$this, 'receipt_page'));
+        add_action('woocommerce_receipt_qr', array(&$this, 'receipt_page'));
       
 
     }
@@ -78,12 +78,12 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                 'title' => __('Url Return', 'pagofacil_checkout'),
                 'type' => 'text',
                 'description' => __('URL de la página mostrada después de finalizar el pago. No olvide cambiar su dominio', 'pagofacilcheckout'),
-                'default' => __($_SERVER[ 'HTTP_HOST'].'/wp-content/plugins/pluginqr/return.php', 'pagofacilcheckout')),
+                'default' => __("https://".$_SERVER[ 'HTTP_HOST'].'/wp-content/plugins/MultiPluginPagoFacil/return.php', 'pagofacilcheckout')),
             'UrlCallBack' => array(
                 'title' => __('Url Callback', 'pagofacil_checkout'),
                 'type' => 'text',
                 'description' => __('URL de la página mostrada después de finalizar el pago. No olvide cambiar su dominio ', 'pagofacilcheckout'),
-                'default' => __($_SERVER[ 'HTTP_HOST'].'/wp-content/plugins/pluginqr/callback.php', 'pagofacilcheckout'))
+                'default' => __( "https://".$_SERVER[ 'HTTP_HOST'].'/wp-content/plugins/MultiPluginPagoFacil/callback.php', 'pagofacilcheckout'))
             
         );
     }
@@ -104,7 +104,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
 
     
     public function payment_fields(){
-        echo '<p> Se generara un qr que debera scanear con la app de su banco  </p>' ;
+        echo '<p> Se creara un Qr que debera scanear con la app de su banco  </p>' ;
     }
 
  
@@ -149,8 +149,8 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
             $lcMoneda=2;
         }
 
-        $lcNombreCliente= "usuario ".@$orderdata['datos']['billing']['first_name']." ". @$orderdata['datos']['billing']['last_name'];
-      
+        $lcNombreCliente= @$orderdata['datos']['billing']['first_name']." ". @$orderdata['datos']['billing']['last_name'];
+       
         ///-----------------------------
         	$arrayitem=$order->get_items();
 				$ArrayProductos= array();
@@ -234,7 +234,9 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                             "tcApp" => 3  ,
                              'tcCodigoClienteEmpresa' => 9,
                              "tnMetodoPago" => 4 ,
+                             'tcCorreo' => $lcEmail,
                              'tnTelefono' => $lnTelefono,
+                             
                              "tcFacturaA" => $lcNombreCliente , // "nombre usuario" ,
                              'tnCiNit' => 123456,
                              "tcNroPago" => $order_id ,
@@ -337,7 +339,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                             <h1>QR FACIL </h1>
                         <img id="idimagen" style="width:300px ; height:300px" src="data:image/jpeg;base64 , '.@$parameters_args["tnImagenQr"].'" alt="">
                         <button onclick="descargar()" style="background:#10d8fb;;border-radius:12px;color:aliceblue;-webkit-text-stroke-width:thin;"  > Descargar qr</button>
-                        <button  onclick="consultarqr()" style="background:#10d8fb;;border-radius:12px;color:aliceblue;-webkit-text-stroke-width:thin;"  > Consultar estado qr</button>
+                        <button  onclick="consultarqr()" style=" display:none ;background:#10d8fb;;border-radius:12px;color:aliceblue;-webkit-text-stroke-width:thin;"  > Consultar estado qr</button>
                         <form style="display:none" action="'.$parameters_args["urlreturn"].'" method="post">
                             <input type="text" name="Idpedido" value="'.$parameters_args["PedidoId"].'">
                             <input type="text" name="TransaccionDePago" value="'.@$parameters_args["TransaccionDePago"].'">
@@ -388,7 +390,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                 function verificartransaccion(codigo){
                     var trans=codigo;
                     //  var datos= {TransaccionDePago:trans  };
-                      var urlajax="https://marketplace.pagofacil.com.bo/wp-content/plugins/PluginQrFacil/consultatransaccionqr.php"; 
+                      var urlajax="https://'.$_SERVER[ "HTTP_HOST"].'/wp-content/plugins/MultiPluginPagoFacil/consultatransaccionqr.php"; 
                   
                       $.ajax({                    
                               url: urlajax,
