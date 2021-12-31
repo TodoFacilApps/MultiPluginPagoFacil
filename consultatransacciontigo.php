@@ -80,7 +80,7 @@ require_once '../../../wp-load.php';
 
 							}
         }else{
-            $arreglo=array('mensaje' => "sigue", 'tipo' => 3 );
+            $arreglo=array('mensaje' => "Ocurrio un error ", 'tipo' => 4 );
         }
         
     } catch (\Throwable $th) {

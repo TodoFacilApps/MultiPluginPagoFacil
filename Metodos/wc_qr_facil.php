@@ -12,9 +12,9 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
         $this->id					= 'qr';
         $this->icon					= apply_filters('woocomerce_checkout_icon', "https://serviciopagofacil.syscoop.com.bo/Imagenes/MP/logo_qr.png");
         $this->has_fields			= false;
-        $this->method_title			= 'Qr';
+        $this->method_title			= 'Transaferencia Qr';
         $this->method_description	= 'Integración de Woocommerce para pago con QR';
-        $this->title = 'QR';
+        $this->title = 'Transaferencia Qr';
         
         $this->init_form_fields();
         $this->init_settings();
@@ -322,17 +322,6 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
         $parameters_args = $this->get_params_post($order_id);
         $payu_args_array = array();
         
-        foreach($parameters_args as $key => $value){
-            $payu_args_array[] = $key . '=' . $value;
-        }
-        $params_post = implode('&', $payu_args_array);
-
-        $payu_args_array = array();
-        foreach($parameters_args as $key => $value){
-          $payu_args_array[] = "<input type='hidden' name='$key' value='$value'/>";
-        }
-        
-
         //return '<form  action="https://checkout.pagofacil.com.bo/es/pay" method="post" id="pagofacil_checkout_form123"><input style="background:#10d8fb;;border-radius:12px;color:aliceblue;-webkit-text-stroke-width:thin;"  type="submit" id="submit_payu_latam" value="' .__('Pagar', 'pagofacilcheckout').'" /></form>';
         return '<div id="divqrfacil">
                     <center>
@@ -340,12 +329,11 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                         <img id="idimagen" style="width:300px ; height:300px" src="data:image/jpeg;base64 , '.@$parameters_args["tnImagenQr"].'" alt="">
                         <button onclick="descargar()" style="background:#10d8fb;;border-radius:12px;color:aliceblue;-webkit-text-stroke-width:thin;"  > Descargar qr</button>
                         <button  onclick="consultarqr()" style=" display:none ;background:#10d8fb;;border-radius:12px;color:aliceblue;-webkit-text-stroke-width:thin;"  > Consultar estado qr</button>
+                        <label for="">Debe ingresar a la app de su banco y scanear este codigo QR y confirmar el pago  </label>
                         <form style="display:none" action="'.$parameters_args["urlreturn"].'" method="post">
                             <input type="text" name="Idpedido" value="'.$parameters_args["PedidoId"].'">
                             <input type="text" name="TransaccionDePago" value="'.@$parameters_args["TransaccionDePago"].'">
-                            
                             <input type="submit" id="btncompletado" value="Completar orden" >
-                      
                             <input type="submit" value="Completar orden" >
                         </form>
                     </center>
@@ -437,6 +425,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                 
             </script>';	
     }
+    
     
     /**
          * Procesa el pago 

@@ -11,6 +11,7 @@ try {
         }
    		$tnTelefono = $_REQUEST['tnTelefono'];
         $_SESSION['tnTelefono'] = $tnTelefono ; // A string
+        echo $_SESSION['tnTelefono'];
         
 	} 
 
