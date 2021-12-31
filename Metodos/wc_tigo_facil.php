@@ -42,6 +42,8 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
             add_action( 'woocommerce_update_options_payment_gateways', array( &$this, 'process_admin_options' ) );
         }
         add_action('woocommerce_receipt_tigomoney', array(&$this, 'receipt_page'));
+       
+
     }
     
     /**
@@ -126,8 +128,9 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
      */
 
    
-    public function get_params_posttigo($order_id){
+    public function get_params_posttigo($order_id, $nuevotelefono=0 ){
         global $woocommerce;
+  
       
         try {
             
@@ -162,7 +165,6 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                                     "Producto" =>  $product->get_name(), 
                                     "LinkPago" => 0 , 
                                     'Cantidad'=>  $value->get_quantity(),
-
                                     "Precio"=>  $product->get_price() ,  
                                     "Descuento" => 0, 
                                     "Total"=> $value->get_quantity() * $product->get_price() 
@@ -174,7 +176,16 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
         // aqui todas estas variables son las que se van a encriptar para poder ingresar al checkout pagofacil 
         $lcPedidoID=$order_id ;
         $lcEmail= $orderdata['datos']['billing']['email'];
-        $lnTelefono=$orderdata['datos']['billing']['phone']; ; //$loFormDatos['Celular'] ;
+        
+        if(isset( $_SESSION['tnTelefono'])  &&  $_SESSION['tnTelefono'] != 0 )
+        {
+            $lnTelefono=$_SESSION['tnTelefono'] ; //$loFormDatos['Celular'] ;
+           
+        }else{
+            $lnTelefono=$orderdata['datos']['billing']['phone']; ; //$loFormDatos['Celular'] ;
+            echo "ingreso por false session";
+        }
+
         $lnMonto=$amount;
         $lcParametro1="$this->UrlCallBack";
         $lcParametro2="$this->UrlReturn";
@@ -291,7 +302,6 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                 );
         }
         return $parameters_args;
-
     }
 
    
@@ -309,33 +319,28 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
     public function generate_checkout_form($order_id){			
         $parameters_args = $this->get_params_posttigo($order_id);
        
-      /*  
-        foreach($parameters_args as $key => $value){
-            $payu_args_array[] = $key . '=' . $value;
-        }
-        $params_post = implode('&', $payu_args_array);
-
-        $payu_args_array = array();
-        foreach($parameters_args as $key => $value){
-          $payu_args_array[] = "<input type='hidden' name='$key' value='$value'/>";
-        }*/
-        
-
-        //return '<form  action="https://checkout.pagofacil.com.bo/es/pay" method="post" id="pagofacil_checkout_form123"><input style="background:#10d8fb;;border-radius:12px;color:aliceblue;-webkit-text-stroke-width:thin;"  type="submit" id="submit_payu_latam" value="' .__('Pagar', 'tigofacil').'" /></form>';
-        return '<div id="divtigofacil">
+      return '<div id="divtigofacil">
                     <center>
                             <div id="content">
-                            <h1>Tigo Money  </h1>
-                                <div class="loading"><img  style="width: 100px;" src="https://acegif.com/wp-content/uploads/loading-25.gif" alt="loading" /><br/>La Transaccion esta siendo procesada...</div>
-                            </div>
-                        
-                        <form   action="'.@$parameters_args["urlreturn"].'" method="post">
+                                <h1>Tigo Money  </h1>
+                                <div  class="loading">
+                                    <img id="imgcarga"  style="width: 100px;" src="https://acegif.com/wp-content/uploads/loading-25.gif" alt="loading" /><br/> 
+                                    <label id="lbltexto" for="">La Transaccion esta siendo procesada...</label> 
+                                </div>
+                            </div>                        
+                        <form style="display:none"   action="'.@$parameters_args["urlreturn"].'" method="post">
                             <input type="text" name="Idpedido" value="'.@$parameters_args["PedidoId"].'">
                             <input type="text" name="TransaccionDePago" value="'.@$parameters_args["TransaccionDePago"].'">
-                            
                             <input type="submit" id="btncompletado" value="Completar orden" >
                         </form>
-                        <input type="Button" style="display:none" id="btnNuevaTransaccion" value="Generar" >
+                        <form  id ="formintentar" style="display:none"  target="dummyframe" action="https://'.$_SERVER[ "HTTP_HOST"].'/wp-content/plugins/MultiPluginPagoFacil/actualizarnumero.php" method="post">
+                                <input type="text" name="tnTelefono" value="">
+                                <input type="submit"  value="Intentar de nuevo" onclick="setTimeout(cargarpagina, 5000);   id="btnNuevaTransaccion" >
+                        </form>
+
+                             <iframe style="display:none" name="dummyframe" id="dummyframe" "></iframe>
+                        
+                      
                     </center>
                 </div>
                 <script src="https://code.jquery.com/jquery-3.5.0.min.js" ></script>
@@ -345,7 +350,7 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                 var lnTransaccionDePago = $("#TransaccionDePago").val();
                 if(lnTransaccionDePago !=  0 )
                 {
-                    intervalo=setInterval("verificartransaccion('.@$parameters_args["TransaccionDePago"].')",15000);
+                    intervalo=setInterval("verificartransaccion('.@$parameters_args["TransaccionDePago"].')",6000);
                 }else{
                     $("#btnNuevaTransaccion").show();
                 }
@@ -353,6 +358,10 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
 
             });
 
+            function cargarpagina()
+            {
+                location.reload();
+            }
           
             function verificartransaccion(codigo){
                 var trans=codigo;
@@ -377,9 +386,16 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                                     } 
                                     if(response.tipo == 1 )
                                     {
-                                        $("#btncompletado").click();
-                                        alert(response.mensaje+ "No se pudo completar el pago ");
+                                       // $("#btncompletado").click();
+
+                                       $("#lbltexto").text(response.mensaje);
+                                       $("#imgcarga").hide();
+                                       $("#formintentar").show();
+                                       
+                                       
+                                       
                                         clearInterval(intervalo);
+                                        //$("#btnNuevaTransaccion").show();
                                         
                                     } 
                                 
