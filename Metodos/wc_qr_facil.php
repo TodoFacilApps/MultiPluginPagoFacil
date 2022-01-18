@@ -12,9 +12,9 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
         $this->id					= 'qr';
         $this->icon					= apply_filters('woocomerce_checkout_icon', "https://serviciopagofacil.syscoop.com.bo/Imagenes/MP/logo_qr.png");
         $this->has_fields			= false;
-        $this->method_title			= 'Transaferencia Qr';
+        $this->method_title			= 'Transferencias Qr';
         $this->method_description	= 'Integración de Woocommerce para pago con QR';
-        $this->title = 'Transaferencia Qr';
+        $this->title = 'Transferencias Qr';
         
         $this->init_form_fields();
         $this->init_settings();
@@ -104,7 +104,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
 
     
     public function payment_fields(){
-        echo '<p> Se creara un Qr que debera scanear con la app de su banco  </p>' ;
+        echo '<p> Se creara un QR que deberás escanear con la app de su banco  </p>' ;
     }
 
  
@@ -229,7 +229,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                 // aqui se hara el tema de la genracion de la transaccion
                 //Transaccion
                     error_log("response--valuestokeb" . json_encode($responsetoken->values));
-                    $url = 'http://serviciopagofacil.syscoop.com.bo/api/Transaccion/CrearTransaccionDePago';
+                   // $url = 'http://serviciopagofacil.syscoop.com.bo/api/Transaccion/CrearTransaccionDePago';
                     $laDatos = array("tnCliente" => 9 ,  
                             "tcApp" => 3  ,
                              'tcCodigoClienteEmpresa' => 9,
@@ -249,41 +249,37 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                              "tcParametros" => base64_encode($tcParametros),
                               
                             );
-                    $laServicioTransaccion = wp_remote_post($url, array(
-                        'headers'     => array('Content-Type' => 'application/json; charset=utf-8' ,   'Authorization' => 'Bearer ' . $responsetoken->values),
-                        'body'        => json_encode($laDatos, true),
-                        'method'      => 'POST',
-                        'data_format' => 'body',
-                        ));
-                
-                        $responsetransaccion = wp_remote_retrieve_body($laServicioTransaccion);
-                        $responsetransaccion = json_decode($responsetransaccion);
-                        error_log("response--transacciondepago " . json_encode($responsetransaccion));
-            
-                  
+       
+                        $tnTransaccionDePago=0;
+                        // aqui se ra el tema ya de tigo money 
+             
                 // fin transaccion
                   // crear qr 
-                    $url = 'https://servicios.qr.com.bo/api/servicio/generarqr';
-                    $laDatos = array("tnTransaccionDePago" =>  $responsetransaccion->values  );
+                    $url = 'https://serviciostigomoney.pagofacil.com.bo/api/servicio/generarqr';
+                  //  $laDatos = array("tnTransaccionDePago" =>  $responsetransaccion->values  );
                     $laServicioLogin = wp_remote_post($url, array(
-                        'headers'     => array('Content-Type' => 'application/json; charset=utf-8' ,   'Authorization' => 'Bearer ' . $responsetoken->values),
+                        'headers'     => array('Content-Type' => 'application/json; charset=utf-8' ),
                         'body'        => json_encode($laDatos, true),
                         'method'      => 'POST',
                         'data_format' => 'body',
+                        'timeout'     => 45,
                         ));
-                
-                    $response = wp_remote_retrieve_body($laServicioLogin);
-                  
-                    $response = json_decode($response);
-                    error_log("response-- qr generar " .Date("y-m-d h:m:s") .json_encode($response));
-                  
+                        error_log("servicio/generarqr".Date("y-m-d h:m:s") . json_encode($laServicioLogin));
+
+                    $responseqr = wp_remote_retrieve_body($laServicioLogin);
+                    $responseqr = json_decode($responseqr);
+          
+                    error_log("response-- qr generar222 " .Date("y-m-d h:m:s") .json_encode($responseqr));
+                    error_log("response--tigo" . json_encode($responseqr));
+
+
                 //fin crear qr 
 
                     //	$tnTokenLogin=$response->token;
-                    if(isset($response->values)    )
+                    if(isset($responseqr->values)    )
                     {
-                        error_log("response--values generaqr" . json_encode($response));
-                        $laValues=explode(";", $response->values);
+                        error_log("response--values generaqr" . json_encode($responseqr));
+                        $laValues=explode(";", $responseqr->values);
                     
                         //error_log("response--values" . json_encode($laValues));
                         $laDatosQr=json_decode($laValues[1]);
@@ -293,13 +289,14 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
                         'tcCommerceID' => $tcCommerceID,
                         'tnImagenQr'=> $laDatosQr->qrImage,
                         'PedidoId'=>$order_id,
-                        'TransaccionDePago'=>$responsetransaccion->values ,
+                        'TransaccionDePago'=>$laValues[0] ,
                         'urlreturn'=>$this->UrlReturn
                         );
                     }else{
-                        error_log("response--values genearaqr" . json_encode($response));
+                        error_log("response--values genearaqr" . json_encode($responseqr));
                         $parameters_args = array(
                         'PedidoId'=>$order_id,
+                        'TransaccionDePago'=>0 ,
                         'urlreturn'=>$this->UrlReturn
                         );
                     }
@@ -309,7 +306,7 @@ class WC_Qr_Facil extends WC_Payment_Gateway {
 
     }
             
-    /**
+    /**++
      * Metodo que genera el formulario con los datos de pago
      * aqui se generara el formulario  que tenda los datos de commerceid y de parametros 
      * que seriviran para ingresar al checkout
