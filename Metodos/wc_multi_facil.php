@@ -84,12 +84,12 @@ class WC_Multi_Facil extends WC_Payment_Gateway {
                 'title' => __('Url Return', 'pagofacil_checkout'),
                 'type' => 'text',
                 'description' => __('URL de la página mostrada después de finalizar el pago.(puede ocupar una suya ) No olvide cambiar su dominio', 'pagofacilcheckout')  . `<style>  .description{ color: red }  </style>`,
-                'default' => __('http://su.dominio.com/wp-content/plugins/woocomerce-pagofacil-checkout-v3/return.php', 'pagofacilcheckout')),
+                'default' => __("https://".$_SERVER[ 'HTTP_HOST'].'/wp-content/plugins/MultiPluginPagoFacil/return.php', 'pagofacilcheckout')),
             'UrlCallBack' => array(
                 'title' => __('Url Callback', 'pagofacil_checkout'),
                 'type' => 'text',
                 'description' => __('URL de la página mostrada después de finalizar el pago. No olvide cambiar su dominio ', 'pagofacilcheckout'),
-                'default' => __('http://su.dominio.com/wp-content/plugins/woocomerce-pagofacil-checkout-v3/callback.php', 'pagofacilcheckout')),
+                'default' => __("https://".$_SERVER[ 'HTTP_HOST'].'/wp-content/plugins/MultiPluginPagoFacil/callback.php', 'pagofacilcheckout')),
                                 
             'description' => array(
                 'description' => __('description', 'pagofacilcheckout'),

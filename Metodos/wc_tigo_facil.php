@@ -102,7 +102,7 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
     
 
     public function payment_fields(){
-        echo '<p> Se enviara un codigo de confirmacion al numero de telefono   </p>' ;
+        echo '<p> Se enviara un código de confirmación al número de teléfono </p>' ;
     }
 
     /**
@@ -246,48 +246,32 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
                              "tcParametros" => base64_encode($tcParametros),
                               
                             );
-            $laServicioLogin = wp_remote_post($url, array(
-                'headers'     => array('Content-Type' => 'application/json; charset=utf-8' ,   'Authorization' => 'Bearer ' . $responsetoken->values),
-                'body'        => json_encode($laDatos, true),
-                'method'      => 'POST',
-                'data_format' => 'body',
-                ));
-                error_log("datos--transaccion" . json_encode($laDatos));
-        
-            $responsetransaccion = wp_remote_retrieve_body($laServicioLogin);
-            $responsetransaccion = json_decode($responsetransaccion);
-            error_log("response--transaccion" . json_encode($responsetransaccion));
-
         // aqui se ara el ttema de transaccion 
         $tnTransaccionDePago=0;
-        if(isset($responsetransaccion->values))
-        {
-            $tnTransaccionDePago=$responsetransaccion->values ; 
             // aqui se ra el tema ya de tigo money 
-            $url = 'http://serviciostigomoney.pagofacil.com.bo/api/servicio/pagomultiple';
-            $laDatos = array("tnTransaccionDePago" =>  $responsetransaccion->values  
-                            );
+            $url = 'https://serviciostigomoney.pagofacil.com.bo/api/servicio/realizarpagotigomoney';
             $laServicioLogin = wp_remote_post($url, array(
                 'headers'     => array('Content-Type' => 'application/json; charset=utf-8' ,   'Authorization' => 'Bearer ' . $responsetoken->values),
                 'body'        => json_encode($laDatos, true),
                 'method'      => 'POST',
                 'data_format' => 'body',
+                'timeout'     => 45,
                 ));
         
             $response = wp_remote_retrieve_body($laServicioLogin);
             $response = json_decode($response);
             error_log("response--tigo" . json_encode($response));
         // aqui se ara el tema de tigo money 
-        }
+      
         
 
-            if(isset($response->values)  &&  isset($response->values)  &&  $tnTransaccionDePago!=0    )
+            if(isset($response->values)  &&  isset($response->values)     )
             {
                 $parameters_args = array(
                 'tcParametros' => base64_encode($tcParametros),
                 'tcCommerceID' => $tcCommerceID,
                 'PedidoId'=>$order_id,
-                'TransaccionDePago'=>$responsetransaccion->values ,
+                'TransaccionDePago'=>$response->values ,
                 'urlreturn'=>$this->UrlReturn,
                 "tnTelefono"=>$lnTelefono
                 );
@@ -307,7 +291,6 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
             $parameters_args = array(
                 'tcParametros' => base64_encode($tcParametros),
                 'tcCommerceID' => $tcCommerceID,
-             //   'tnImagenQr'=> $laDatosQr->qrImage,
                 'PedidoId'=>$th->getLine(),
                 'urlreturn'=>$th->getMessage(),
                 "tnTelefono"=>$lnTelefono
@@ -315,10 +298,6 @@ class WC_Tigo_Facil extends WC_Payment_Gateway {
         }
         return $parameters_args;
     }
-
-   
-
-            
     /**
      * Metodo que genera el formulario con los datos de pago
      * aqui se generara el formulario  que tenda los datos de commerceid y de parametros 
